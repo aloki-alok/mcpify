@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"time"
 
@@ -15,12 +16,20 @@ func RunStdio(ctx context.Context, srv *sdk.Server) error {
 	return srv.Run(ctx, &sdk.StdioTransport{})
 }
 
-// RunHTTP serves the MCP server over the streamable-HTTP transport at addr. The
-// same server instance is shared across sessions. It blocks until ctx is
-// cancelled or the listener fails.
-func RunHTTP(ctx context.Context, srv *sdk.Server, addr string) error {
-	handler := sdk.NewStreamableHTTPHandler(func(*http.Request) *sdk.Server { return srv }, nil)
-	httpSrv := &http.Server{Addr: addr, Handler: handler}
+// RunHTTP serves the MCP server over the streamable-HTTP transport. The protocol
+// endpoint is mounted at /mcp; any other path returns infoText as plain text, so
+// a human who opens the root URL in a browser gets an explanation instead of a
+// protocol error. The same server instance is shared across sessions. It blocks
+// until ctx is cancelled or the listener fails.
+func RunHTTP(ctx context.Context, srv *sdk.Server, addr, infoText string) error {
+	mcpHandler := sdk.NewStreamableHTTPHandler(func(*http.Request) *sdk.Server { return srv }, nil)
+	mux := http.NewServeMux()
+	mux.Handle("/mcp", mcpHandler)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		io.WriteString(w, infoText)
+	})
+	httpSrv := &http.Server{Addr: addr, Handler: mux}
 
 	errc := make(chan error, 1)
 	go func() { errc <- httpSrv.ListenAndServe() }()
