@@ -1,0 +1,48 @@
+openapi: 3.0.3
+info:
+  title: Petstore
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:8799
+paths:
+  /pets:
+    get:
+      operationId: listPets
+      summary: List all pets
+      parameters:
+        - name: limit
+          in: query
+          description: max number of pets to return
+          schema:
+            type: integer
+    post:
+      operationId: createPet
+      summary: Add a new pet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPet'
+  /pets/{petId}:
+    get:
+      operationId: getPet
+      summary: Fetch one pet by id
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: string
+components:
+  schemas:
+    NewPet:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: the pet's name
+        species:
+          type: string
+          description: dog, cat, etc.
