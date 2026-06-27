@@ -16,6 +16,7 @@ type options struct {
 	headers  map[string]string
 	http     string
 	readOnly bool
+	stdio    bool
 	timeout  time.Duration
 	spec     string
 }
@@ -86,6 +87,8 @@ func parse(args []string) (options, error) {
 			o.http = v
 		case "--read-only":
 			o.readOnly = true
+		case "--stdio":
+			o.stdio = true
 		case "--timeout":
 			v, err := next()
 			if err != nil {
