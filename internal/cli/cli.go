@@ -37,6 +37,8 @@ func Run(version string, args []string) int {
 		return ls(args[1:])
 	case "serve":
 		return serve(version, args[1:])
+	case "upgrade":
+		return Upgrade(version)
 	default:
 		// A bare spec path or URL serves it directly.
 		return serve(version, args)
