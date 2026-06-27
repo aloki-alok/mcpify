@@ -1,0 +1,4 @@
+/mcpify
+/dist/
+*.test
+*.out
