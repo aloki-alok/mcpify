@@ -24,32 +24,15 @@ func ls(args []string) int {
 	}
 	defs := tool.Defs(doc, o.readOnly)
 
-	s := ui.For(os.Stdout)
 	title := doc.Title
 	if title == "" {
 		title = o.spec
 	}
-	fmt.Printf("%s  %s\n", s.Bold(title), s.Dim(fmt.Sprintf("%d tools", len(defs))))
+	server := ""
 	if len(doc.Servers) > 0 {
-		fmt.Println(s.Dim("server: " + doc.Servers[0].URL))
+		server = doc.Servers[0].URL
 	}
-	fmt.Println()
-
-	width := 0
-	for _, d := range defs {
-		if n := len(d.Name); n > width {
-			width = n
-		}
-	}
-	for _, d := range defs {
-		verb := fmt.Sprintf("%-6s", d.Method())
-		pad := strings.Repeat(" ", width-len(d.Name)+2)
-		fmt.Printf("  %s%s%s %s\n",
-			s.Accent(d.Name), pad, s.Dim(verb), d.Path())
-		if line := firstLine(d.Description, d.Method()+" "+d.Path()); line != "" {
-			fmt.Printf("  %s%s\n", strings.Repeat(" ", width+2), s.Dim(line))
-		}
-	}
+	renderTools(ui.For(os.Stdout), os.Stdout, title, server, defs)
 	return 0
 }
 

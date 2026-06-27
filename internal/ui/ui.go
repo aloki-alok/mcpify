@@ -15,11 +15,17 @@ func For(f *os.File) Style {
 	if os.Getenv("NO_COLOR") != "" || os.Getenv("TERM") == "dumb" {
 		return Style{}
 	}
+	return Style{on: IsTTY(f)}
+}
+
+// IsTTY reports whether f is an interactive terminal (a character device),
+// used to tell a human at a terminal from a pipe a client spawned.
+func IsTTY(f *os.File) bool {
 	info, err := f.Stat()
 	if err != nil {
-		return Style{}
+		return false
 	}
-	return Style{on: info.Mode()&os.ModeCharDevice != 0}
+	return info.Mode()&os.ModeCharDevice != 0
 }
 
 func (s Style) wrap(code, str string) string {

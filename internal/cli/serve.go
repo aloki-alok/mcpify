@@ -9,6 +9,7 @@ import (
 
 	"github.com/aloki-alok/mcpify/internal/server"
 	"github.com/aloki-alok/mcpify/internal/tool"
+	"github.com/aloki-alok/mcpify/internal/ui"
 )
 
 func serve(version string, args []string) int {
@@ -45,28 +46,34 @@ func serve(version string, args []string) int {
 		Version: version,
 	})
 
-	// Diagnostics go to stderr; in stdio mode stdout is the MCP transport.
-	title := doc.Title
-	if title == "" {
-		title = o.spec
+	name := doc.Title
+	if name == "" {
+		name = o.spec
 	}
-	fmt.Fprintf(os.Stderr, "mcpify: %s — %d tools → %s\n", title, len(defs), base)
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
+	// Explicit HTTP server.
 	if o.http != "" {
-		fmt.Fprintf(os.Stderr, "mcpify: serving MCP over HTTP at %s\n", o.http)
-		if err := server.RunHTTP(ctx, srv, o.http); err != nil && err != context.Canceled {
+		if !isPortFree(o.http) {
+			fmt.Fprintf(os.Stderr, "mcpify: %s is already in use; try --http %s\n", o.http, nextFreePort(o.http))
+			return 1
+		}
+		return serveHTTP(srv, o.http, name, base, len(defs))
+	}
+
+	// stdio: a client spawned us over a pipe, or --stdio forces it. Serve quietly;
+	// stdout is the MCP transport so all diagnostics go to stderr.
+	if o.stdio || !ui.IsTTY(os.Stdin) {
+		fmt.Fprintf(os.Stderr, "mcpify: %s — %d tools → %s (stdio)\n", name, len(defs), base)
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		if err := server.RunStdio(ctx, srv); err != nil && err != context.Canceled {
 			fmt.Fprintln(os.Stderr, "mcpify:", err)
 			return 1
 		}
 		return 0
 	}
 
-	if err := server.RunStdio(ctx, srv); err != nil && err != context.Canceled {
-		fmt.Fprintln(os.Stderr, "mcpify:", err)
-		return 1
-	}
-	return 0
+	// A human ran us in a terminal: guide them interactively instead of hanging
+	// on stdin waiting for a client that will never speak.
+	return interact(o, srv, name, base, defs)
 }
