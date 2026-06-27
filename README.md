@@ -14,6 +14,14 @@ mcpify openapi.yaml           # serve it as an MCP server over stdio
 
 ## Install
 
+Homebrew:
+
+```
+brew install aloki-alok/tap/mcpify
+```
+
+Or the install script:
+
 ```
 curl -fsSL https://raw.githubusercontent.com/aloki-alok/mcpify/main/install.sh | sh
 ```
