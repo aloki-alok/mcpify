@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/aloki-alok/mcpify/internal/openapi"
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func TestResolveBase(t *testing.T) {
@@ -24,6 +25,8 @@ func TestResolveBase(t *testing.T) {
 		{name: "templated server errors", servers: []openapi.Server{{URL: "https://{region}.api.com"}}, wantErr: true},
 		{name: "no servers falls back to spec origin", specURL: "https://host.tld/spec.yaml", want: "https://host.tld"},
 		{name: "no servers no spec url errors", wantErr: true},
+		{name: "templated server filled from variable defaults", servers: []openapi.Server{{URL: "https://{host}/{base}", Variables: map[string]string{"host": "api.example.com", "base": "v2"}}}, want: "https://api.example.com/v2"},
+		{name: "templated server missing default errors", servers: []openapi.Server{{URL: "https://{host}/v1", Variables: map[string]string{}}}, wantErr: true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -65,5 +68,17 @@ func TestFormatResponseError(t *testing.T) {
 	res := formatResponse(resp, []byte(`{"error":"missing"}`))
 	if !res.IsError {
 		t.Fatal("404 should be an error")
+	}
+}
+
+func TestFormatResponseEmptyBody(t *testing.T) {
+	resp := &http.Response{StatusCode: 204, Status: "204 No Content"}
+	res := formatResponse(resp, nil)
+	if res.IsError {
+		t.Fatal("204 should not be an error")
+	}
+	got := res.Content[0].(*sdk.TextContent).Text
+	if got != "HTTP 204 No Content (no content)" {
+		t.Fatalf("text = %q", got)
 	}
 }

@@ -22,9 +22,14 @@ func ResolveBase(doc *openapi.Document, override, specURL string) (string, error
 	}
 
 	if len(doc.Servers) > 0 {
-		raw := doc.Servers[0].URL
+		srv := doc.Servers[0]
+		raw := srv.URL
 		if strings.Contains(raw, "{") {
-			return "", fmt.Errorf("server URL %q is templated; pass --base <url>", raw)
+			filled, ok := fillTemplate(raw, srv.Variables)
+			if !ok {
+				return "", fmt.Errorf("server URL %q has variables without defaults; pass --base <url>", raw)
+			}
+			raw = filled
 		}
 		if hasScheme(raw) {
 			return raw, nil
@@ -44,6 +49,29 @@ func ResolveBase(doc *openapi.Document, override, specURL string) (string, error
 
 func hasScheme(s string) bool {
 	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
+}
+
+// fillTemplate substitutes {var} placeholders in a server URL with their default
+// values. It returns ok=false if any placeholder has no default, so the caller
+// can ask for an explicit --base.
+func fillTemplate(raw string, vars map[string]string) (string, bool) {
+	for {
+		open := strings.IndexByte(raw, '{')
+		if open < 0 {
+			return raw, true
+		}
+		close := strings.IndexByte(raw[open:], '}')
+		if close < 0 {
+			return "", false
+		}
+		close += open
+		name := raw[open+1 : close]
+		val, ok := vars[name]
+		if !ok {
+			return "", false
+		}
+		raw = raw[:open] + val + raw[close+1:]
+	}
 }
 
 func resolveAgainst(specURL, rel string) (string, error) {

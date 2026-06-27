@@ -96,6 +96,13 @@ func handlerFor(client *http.Client, base string, headers map[string]string, d t
 func formatResponse(resp *http.Response, data []byte) *sdk.CallToolResult {
 	isErr := resp.StatusCode >= 400
 
+	if len(data) == 0 {
+		return &sdk.CallToolResult{
+			Content: []sdk.Content{&sdk.TextContent{Text: fmt.Sprintf("HTTP %s (no content)", resp.Status)}},
+			IsError: isErr,
+		}
+	}
+
 	pretty, obj := prettyJSON(data)
 	text := pretty
 	if isErr {
