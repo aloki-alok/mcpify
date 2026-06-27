@@ -37,6 +37,7 @@ Usage:
   mcpify <spec>              serve an OpenAPI spec as an MCP server (stdio)
   mcpify serve <spec>        same, explicit
   mcpify ls <spec>           preview the tools the spec would expose
+  mcpify upgrade             update mcpify to the latest release
   mcpify version             print the version
 
 A <spec> is a path to an OpenAPI 3.x file or an http(s):// URL.

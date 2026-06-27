@@ -65,6 +65,12 @@ Expose only read operations (GET and HEAD):
 mcpify --read-only spec.yaml
 ```
 
+Update to the latest release in place:
+
+```
+mcpify upgrade
+```
+
 ### Plug into an MCP client
 
 Any client that launches a server over stdio works. For example:
@@ -101,9 +107,10 @@ request.
 
 ## Scope
 
-OpenAPI 3.0 and 3.1, in JSON or YAML. One operation maps to one tool. Auth is
-pass-through: the headers you supply are forwarded upstream. Swagger 2.0 is not
-supported.
+OpenAPI 3.0 and 3.1, in JSON or YAML. One operation maps to one tool. Request
+bodies are JSON. Templated server URLs resolve from their variable defaults, or
+override the base with `--base`. Auth is pass-through: the headers you supply are
+forwarded upstream. Swagger 2.0 is not supported.
 
 ## License
 

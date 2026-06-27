@@ -22,10 +22,12 @@ type Document struct {
 	Operations []Operation
 }
 
-// Server is one entry from the spec's top-level servers list.
+// Server is one entry from the spec's top-level servers list. Variables holds
+// the default value of each server variable, used to fill a templated URL.
 type Server struct {
 	URL         string
 	Description string
+	Variables   map[string]string
 }
 
 // Operation is a single path+method, the unit that becomes one MCP tool.
@@ -104,7 +106,23 @@ func parseServers(v any) []Server {
 			continue
 		}
 		desc, _ := m["description"].(string)
-		out = append(out, Server{URL: url, Description: desc})
+		out = append(out, Server{URL: url, Description: desc, Variables: parseServerVars(m["variables"])})
+	}
+	return out
+}
+
+func parseServerVars(v any) map[string]string {
+	vars, ok := v.(map[string]any)
+	if !ok {
+		return nil
+	}
+	out := make(map[string]string, len(vars))
+	for name, raw := range vars {
+		if m, ok := raw.(map[string]any); ok {
+			if def, ok := m["default"].(string); ok {
+				out[name] = def
+			}
+		}
 	}
 	return out
 }
