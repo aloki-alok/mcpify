@@ -5,13 +5,25 @@ package main
 
 import (
 	"os"
+	"runtime/debug"
 
 	"github.com/aloki-alok/mcpify/internal/cli"
 )
 
-// version is overridden at release time via -ldflags.
+// version is overridden at release time via -ldflags. For "go install" builds,
+// which carry no ldflags, it falls back to the module version from build info.
 var version = "0.0.0-dev"
 
 func main() {
-	os.Exit(cli.Run(version, os.Args[1:]))
+	os.Exit(cli.Run(resolveVersion(), os.Args[1:]))
+}
+
+func resolveVersion() string {
+	if version != "0.0.0-dev" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return version
 }
