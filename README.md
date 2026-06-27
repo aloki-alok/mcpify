@@ -14,18 +14,22 @@ mcpify openapi.yaml           # serve it as an MCP server over stdio
 
 ## Install
 
-Build from source (Go 1.26+):
+```
+curl -fsSL https://raw.githubusercontent.com/aloki-alok/mcpify/main/install.sh | sh
+```
+
+Or with Go (1.26+):
+
+```
+go install github.com/aloki-alok/mcpify@latest
+```
+
+Or grab a prebuilt binary from the [releases page](https://github.com/aloki-alok/mcpify/releases), or build from source:
 
 ```
 git clone https://github.com/aloki-alok/mcpify
 cd mcpify
 go build -o mcpify .
-```
-
-Or, once released:
-
-```
-go install github.com/aloki-alok/mcpify@latest
 ```
 
 ## Use
