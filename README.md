@@ -7,6 +7,8 @@ tool. There is no code to generate and nothing to wire up: mcpify reads the
 spec, exposes one tool per operation, and proxies each tool call to the real
 API.
 
+![mcpify listing the tools an OpenAPI spec exposes](./docs/demo.gif)
+
 ```
 mcpify ls openapi.yaml        # preview the tools a spec exposes
 mcpify openapi.yaml           # serve it as an MCP server over stdio
