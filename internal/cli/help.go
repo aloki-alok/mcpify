@@ -47,7 +47,12 @@ Options:
   -H, --header "Name: val"   header sent on every upstream request (repeatable)
   --http <addr>              serve over HTTP at addr (e.g. :8080) instead of stdio
   --read-only                only expose GET and HEAD operations
+  --stdio                    force stdio serving even in a terminal (skip the menu)
   --timeout <dur>            upstream request timeout (default 30s)
+
+Run in a terminal, mcpify <spec> opens a short menu (run a server, print a
+client config, or list the tools). An MCP client that launches mcpify over
+stdio gets the server directly.
 
 Examples:
   mcpify ls ./petstore.yaml

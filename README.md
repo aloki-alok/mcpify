@@ -11,7 +11,7 @@ API.
 
 ```
 mcpify ls openapi.yaml        # preview the tools a spec exposes
-mcpify openapi.yaml           # serve it as an MCP server over stdio
+mcpify openapi.yaml           # serve it as an MCP server
 ```
 
 ## Install
@@ -50,18 +50,26 @@ Preview what a spec turns into, without starting anything:
 mcpify ls https://petstore3.swagger.io/api/v3/openapi.json
 ```
 
-Serve a spec over stdio, the transport MCP clients use when they spawn a
-server:
+Serve a spec:
 
 ```
 mcpify ./petstore.yaml
 ```
 
-Serve over HTTP instead:
+In a terminal this opens a short menu: run a local server and get a connect
+URL (the default, just press enter), print a client config to paste, or list
+the tools. When an MCP client spawns mcpify over a pipe, it serves stdio
+directly, so the same command works inside a client config. Pass `--stdio` to
+force stdio serving in a terminal too.
+
+Serve over HTTP at a fixed address:
 
 ```
 mcpify --http :8080 ./petstore.yaml
 ```
+
+The MCP endpoint is `http://localhost:8080/mcp`. The root URL serves a short
+plain-text page describing the server, for anyone who opens it in a browser.
 
 Forward auth and override the upstream base URL:
 
@@ -111,7 +119,8 @@ request.
 | --- | --- |
 | `--base <url>` | upstream base URL, overriding the spec's `servers` |
 | `-H, --header "Name: value"` | header sent on every upstream request (repeatable) |
-| `--http <addr>` | serve over HTTP at `addr` instead of stdio |
+| `--http <addr>` | serve over HTTP at `addr` (MCP endpoint at `/mcp`) |
+| `--stdio` | serve stdio even in a terminal, skipping the menu |
 | `--read-only` | expose only GET and HEAD operations |
 | `--timeout <dur>` | upstream request timeout (default `30s`) |
 
