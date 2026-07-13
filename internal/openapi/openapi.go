@@ -3,6 +3,10 @@
 // its method, path, parameters, and JSON request body. Schemas are returned as
 // generic JSON-compatible trees with local $refs inlined, so a tool's input
 // schema is self-contained for clients that cannot resolve references.
+//
+// Swagger 2.0 documents are accepted too: they are converted into the same
+// Document model at parse time (see swagger2.go), so nothing downstream needs a
+// second code path.
 package openapi
 
 import (
@@ -20,6 +24,9 @@ type Document struct {
 	APIVersion string
 	Servers    []Server
 	Operations []Operation
+	// Warnings collects non-fatal notes from parsing, such as operations skipped
+	// because they consume formData. Callers surface these to the operator.
+	Warnings []string
 }
 
 // Server is one entry from the spec's top-level servers list. Variables holds
@@ -62,8 +69,9 @@ type RequestBody struct {
 // listings are deterministic regardless of map iteration order.
 var methodOrder = []string{"get", "post", "put", "patch", "delete", "head", "options"}
 
-// Load parses an OpenAPI 3.x document from JSON or YAML bytes. JSON is a subset
-// of YAML, so one decoder handles both.
+// Load parses an OpenAPI 3.x or Swagger 2.0 document from JSON or YAML bytes.
+// JSON is a subset of YAML, so one decoder handles both. A Swagger 2.0 document
+// is converted into the same Document model as 3.x, so callers see one shape.
 func Load(data []byte) (*Document, error) {
 	var root map[string]any
 	if err := yaml.Unmarshal(data, &root); err != nil {
@@ -72,12 +80,15 @@ func Load(data []byte) (*Document, error) {
 	if root == nil {
 		return nil, errors.New("empty document")
 	}
-	if _, ok := root["swagger"]; ok {
-		return nil, errors.New("Swagger 2.0 is not supported; convert the spec to OpenAPI 3.x")
+	if ver, ok := root["swagger"].(string); ok {
+		if ver != "2.0" {
+			return nil, fmt.Errorf("unsupported swagger version %q (mcpify handles Swagger 2.0)", ver)
+		}
+		return loadSwagger2(root)
 	}
 	ver, _ := root["openapi"].(string)
 	if !strings.HasPrefix(ver, "3.") {
-		return nil, fmt.Errorf("unsupported openapi version %q (need 3.x)", ver)
+		return nil, fmt.Errorf("unsupported openapi version %q (need 3.x or Swagger 2.0)", ver)
 	}
 
 	doc := &Document{}
