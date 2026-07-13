@@ -22,7 +22,11 @@ func ls(args []string) int {
 		fmt.Fprintln(os.Stderr, "mcpify:", err)
 		return 1
 	}
-	defs := tool.Defs(doc, o.readOnly)
+	defs := tool.Defs(doc, o.readOnly, o.filter())
+	if len(defs) == 0 {
+		fmt.Fprintln(os.Stderr, "mcpify:", o.noToolsError())
+		return 1
+	}
 
 	title := doc.Title
 	if title == "" {

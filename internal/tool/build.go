@@ -29,16 +29,22 @@ func (d Def) Method() string { return d.op.Method }
 func (d Def) Path() string   { return d.op.Path }
 
 // Defs builds tool definitions for every operation in the document. When
-// readOnly is set, only safe (GET, HEAD) operations are exposed. Names are made
-// unique and stable.
-func Defs(doc *openapi.Document, readOnly bool) []Def {
+// readOnly is set, only safe (GET, HEAD) operations are exposed; filter, if
+// non-empty, further narrows the set to operations it matches. Names are made
+// unique and stable, and are assigned before filtering so a filter can match
+// on the same name `ls` would show, regardless of what else got excluded.
+func Defs(doc *openapi.Document, readOnly bool, filter Filter) []Def {
 	used := map[string]bool{}
 	var out []Def
 	for _, op := range doc.Operations {
 		if readOnly && op.Method != "GET" && op.Method != "HEAD" {
 			continue
 		}
-		out = append(out, build(op, used))
+		d := build(op, used)
+		if !filter.matches(d.Name, op) {
+			continue
+		}
+		out = append(out, d)
 	}
 	return out
 }

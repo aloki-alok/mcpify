@@ -31,9 +31,9 @@ func serve(version string, args []string) int {
 		return 1
 	}
 
-	defs := tool.Defs(doc, o.readOnly)
+	defs := tool.Defs(doc, o.readOnly, o.filter())
 	if len(defs) == 0 {
-		fmt.Fprintln(os.Stderr, "mcpify: no operations to expose (is the spec empty, or --read-only with no GET/HEAD?)")
+		fmt.Fprintln(os.Stderr, "mcpify:", o.noToolsError())
 		return 1
 	}
 

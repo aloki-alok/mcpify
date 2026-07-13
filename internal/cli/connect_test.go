@@ -54,6 +54,23 @@ func TestConfigArgs(t *testing.T) {
 	_ = joined
 }
 
+func TestConfigArgsIncludeTags(t *testing.T) {
+	o := options{
+		spec:    "spec.yaml",
+		include: []string{"pet", "order*"},
+		tags:    []string{"user"},
+	}
+	args := configArgs(o)
+	if args[len(args)-1] != "spec.yaml" {
+		t.Fatalf("spec should be last: %v", args)
+	}
+	for _, want := range []string{"--include", "pet", "order*", "--tag", "user"} {
+		if !contains2(args, want) {
+			t.Errorf("missing %q in %v", want, args)
+		}
+	}
+}
+
 func contains2(ss []string, want string) bool {
 	for _, s := range ss {
 		if s == want {
