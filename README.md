@@ -1,6 +1,7 @@
 # mcpify
 
-Turn any OpenAPI 3.x spec into a working MCP server in one command.
+Turn any OpenAPI 3.x or Swagger 2.0 spec into a working MCP server in one
+command.
 
 Point it at a spec (a file or a URL) and every API operation becomes an MCP
 tool. There is no code to generate and nothing to wire up: mcpify reads the
@@ -145,7 +146,17 @@ request.
 OpenAPI 3.0 and 3.1, in JSON or YAML. One operation maps to one tool. Request
 bodies are JSON. Templated server URLs resolve from their variable defaults, or
 override the base with `--base`. Auth is pass-through: the headers you supply are
-forwarded upstream. Swagger 2.0 is not supported.
+forwarded upstream.
+
+### Swagger 2.0
+
+Swagger 2.0 specs work too. mcpify converts them to the same tools you would get
+from a 3.x spec: the server URL comes from `schemes` + `host` + `basePath`
+(preferring https), path, query, and header parameters map straight across, a
+body parameter's schema is flattened the same way, and `$ref`s into
+`definitions` are inlined. Operations that take `formData` (file uploads and
+form fields) are skipped with a note, since mcpify only sends JSON bodies; the
+rest of the spec still serves.
 
 ## License
 
