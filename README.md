@@ -83,6 +83,18 @@ Expose only read operations (GET and HEAD):
 mcpify --read-only spec.yaml
 ```
 
+Cut down a large spec to the tools you actually want. `--include` keeps
+operations whose tool name, operationId, or path match (a case insensitive
+substring, or a glob if the pattern has a `*`); `--tag` keeps operations
+carrying that OpenAPI tag (case insensitive, exact match). Both are
+repeatable, and an operation is kept if it matches any `--include` or any
+`--tag`:
+
+```
+mcpify --tag pet --tag store spec.yaml
+mcpify --include "pet*" spec.yaml
+```
+
 Update to the latest release in place:
 
 ```
@@ -122,6 +134,8 @@ request.
 | `--http <addr>` | serve over HTTP at `addr` (MCP endpoint at `/mcp`) |
 | `--stdio` | serve stdio even in a terminal, skipping the menu |
 | `--read-only` | expose only GET and HEAD operations |
+| `--include <pattern>` | keep only operations whose tool name, operationId, or path match (repeatable) |
+| `--tag <tag>` | keep only operations with this OpenAPI tag (repeatable) |
 | `--timeout <dur>` | upstream request timeout (default `30s`) |
 
 ## Scope
