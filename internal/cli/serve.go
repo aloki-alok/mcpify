@@ -24,6 +24,7 @@ func serve(version string, args []string) int {
 		fmt.Fprintln(os.Stderr, "mcpify:", err)
 		return 1
 	}
+	reportWarnings(doc)
 
 	base, err := server.ResolveBase(doc, o.base, specURL)
 	if err != nil {
