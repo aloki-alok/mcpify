@@ -40,6 +40,15 @@ func loadSpec(spec string) (*openapi.Document, string, error) {
 	return doc, specURL, nil
 }
 
+// reportWarnings prints any non-fatal parse notes (for example Swagger 2.0
+// operations skipped for formData) to stderr, one per line, so they do not
+// collide with an ls table on stdout or an MCP stdio stream.
+func reportWarnings(doc *openapi.Document) {
+	for _, w := range doc.Warnings {
+		fmt.Fprintln(os.Stderr, "mcpify:", w)
+	}
+}
+
 func fetch(url string) ([]byte, error) {
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Get(url)
