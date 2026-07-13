@@ -122,6 +122,12 @@ func configArgs(o options) []string {
 	if o.readOnly {
 		args = append(args, "--read-only")
 	}
+	for _, pat := range o.include {
+		args = append(args, "--include", pat)
+	}
+	for _, tag := range o.tags {
+		args = append(args, "--tag", tag)
+	}
 	return append(args, o.spec)
 }
 

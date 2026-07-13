@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/aloki-alok/mcpify/internal/tool"
 )
 
 // options are the parsed flags shared by the serve and ls commands.
@@ -16,6 +18,8 @@ type options struct {
 	headers  map[string]string
 	http     string
 	readOnly bool
+	include  []string
+	tags     []string
 	stdio    bool
 	timeout  time.Duration
 	spec     string
@@ -44,6 +48,24 @@ func Run(version string, args []string) int {
 		// A bare spec path or URL serves it directly.
 		return serve(version, args)
 	}
+}
+
+// filter builds the operation filter these options describe.
+func (o options) filter() tool.Filter {
+	return tool.Filter{Include: o.include, Tags: o.tags}
+}
+
+// noToolsError explains an empty tool set, naming whichever flags caused it so
+// the user does not have to guess between an empty spec, --read-only, and
+// --include/--tag matching nothing.
+func (o options) noToolsError() error {
+	if !o.filter().Empty() {
+		return fmt.Errorf("no operations matched --include/--tag (include=%v tag=%v); loosen or drop the filters", o.include, o.tags)
+	}
+	if o.readOnly {
+		return fmt.Errorf("no operations to expose (--read-only with no GET/HEAD in the spec)")
+	}
+	return fmt.Errorf("no operations to expose (is the spec empty?)")
 }
 
 // parse hand-parses flags so they may appear before or after the positional
@@ -87,6 +109,18 @@ func parse(args []string) (options, error) {
 			o.http = v
 		case "--read-only":
 			o.readOnly = true
+		case "--include":
+			v, err := next()
+			if err != nil {
+				return o, err
+			}
+			o.include = append(o.include, v)
+		case "--tag":
+			v, err := next()
+			if err != nil {
+				return o, err
+			}
+			o.tags = append(o.tags, v)
 		case "--stdio":
 			o.stdio = true
 		case "--timeout":
