@@ -96,10 +96,16 @@ func TestLoad(t *testing.T) {
 	}
 }
 
-func TestSwaggerRejected(t *testing.T) {
-	_, err := Load([]byte(`{"swagger":"2.0","info":{}}`))
-	if err == nil {
-		t.Fatal("expected Swagger 2.0 to be rejected")
+func TestUnsupportedVersions(t *testing.T) {
+	cases := []string{
+		`{"swagger":"1.2","info":{}}`, // pre-2.0 Swagger
+		`{"info":{},"paths":{}}`,      // no version key at all
+		`{"openapi":"2.0","info":{}}`, // wrong key for that version
+	}
+	for _, spec := range cases {
+		if _, err := Load([]byte(spec)); err == nil {
+			t.Fatalf("expected error for %q", spec)
+		}
 	}
 }
 
