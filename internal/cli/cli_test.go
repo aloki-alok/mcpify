@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/aloki-alok/mcpify/internal/openapi"
 )
 
 func TestParseFlagsBeforeAndAfterSpec(t *testing.T) {
@@ -84,13 +86,25 @@ func TestParseIncludeInline(t *testing.T) {
 }
 
 func TestNoToolsErrorNamesTheFilter(t *testing.T) {
+	doc := &openapi.Document{Operations: []openapi.Operation{
+		{Method: "GET", Path: "/pets", OperationID: "listPets", Tags: []string{"pet"}},
+		{Method: "POST", Path: "/users", OperationID: "createUser", Tags: []string{"user"}},
+	}}
+
 	o := options{include: []string{"nope"}}
-	if err := o.noToolsError(); err == nil || !strings.Contains(err.Error(), "--include") {
+	err := o.noToolsError(doc)
+	if err == nil || !strings.Contains(err.Error(), "--include") {
 		t.Fatalf("error should mention the filter: %v", err)
+	}
+	// It should suggest what the spec does offer so a typo is easy to fix.
+	for _, want := range []string{"pet", "user", "listPets", "createUser"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("error should list available %q: %v", want, err)
+		}
 	}
 
 	ro := options{readOnly: true}
-	if err := ro.noToolsError(); err == nil || !strings.Contains(err.Error(), "read-only") {
+	if err := ro.noToolsError(doc); err == nil || !strings.Contains(err.Error(), "read-only") {
 		t.Fatalf("error should mention read-only: %v", err)
 	}
 }

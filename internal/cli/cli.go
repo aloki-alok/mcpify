@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aloki-alok/mcpify/internal/openapi"
 	"github.com/aloki-alok/mcpify/internal/tool"
 )
 
@@ -57,15 +58,47 @@ func (o options) filter() tool.Filter {
 
 // noToolsError explains an empty tool set, naming whichever flags caused it so
 // the user does not have to guess between an empty spec, --read-only, and
-// --include/--tag matching nothing.
-func (o options) noToolsError() error {
+// --include/--tag matching nothing. When a filter is the cause it also lists a
+// few tags and tool names the spec does offer, so a mistyped pattern is easy to
+// correct.
+func (o options) noToolsError(doc *openapi.Document) error {
 	if !o.filter().Empty() {
-		return fmt.Errorf("no operations matched --include/--tag (include=%v tag=%v); loosen or drop the filters", o.include, o.tags)
+		tags, names := available(doc, o.readOnly)
+		return fmt.Errorf("no operations matched --include/--tag (include=%v tag=%v); available tags: %s; tool names: %s", o.include, o.tags, sample(tags), sample(names))
 	}
 	if o.readOnly {
 		return fmt.Errorf("no operations to expose (--read-only with no GET/HEAD in the spec)")
 	}
 	return fmt.Errorf("no operations to expose (is the spec empty?)")
+}
+
+// available lists the tags and tool names the spec exposes under the current
+// --read-only setting, drawn from an unfiltered build so the read-only rule
+// stays in tool.Defs and the names match what `ls` would print.
+func available(doc *openapi.Document, readOnly bool) (tags, names []string) {
+	seen := map[string]bool{}
+	for _, d := range tool.Defs(doc, readOnly, tool.Filter{}) {
+		names = append(names, d.Name)
+		for _, t := range d.Tags() {
+			if key := strings.ToLower(t); !seen[key] {
+				seen[key] = true
+				tags = append(tags, t)
+			}
+		}
+	}
+	return tags, names
+}
+
+// sample renders up to five items as a comma-separated list, marking a longer
+// list with a trailing "...", and says "none" when there are none.
+func sample(items []string) string {
+	if len(items) == 0 {
+		return "none"
+	}
+	if len(items) > 5 {
+		return strings.Join(items[:5], ", ") + ", ..."
+	}
+	return strings.Join(items, ", ")
 }
 
 // parse hand-parses flags so they may appear before or after the positional

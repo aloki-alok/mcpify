@@ -34,7 +34,7 @@ func serve(version string, args []string) int {
 
 	defs := tool.Defs(doc, o.readOnly, o.filter())
 	if len(defs) == 0 {
-		fmt.Fprintln(os.Stderr, "mcpify:", o.noToolsError())
+		fmt.Fprintln(os.Stderr, "mcpify:", o.noToolsError(doc))
 		return 1
 	}
 
