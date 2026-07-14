@@ -24,9 +24,11 @@ type Def struct {
 	bodyArg    bool            // true when the whole body is a single "body" argument
 }
 
-// Method and Path expose the underlying operation for previews.
+// Method, Path, and Tags expose the underlying operation for previews and for
+// suggesting matchable targets when a filter excludes everything.
 func (d Def) Method() string { return d.op.Method }
 func (d Def) Path() string   { return d.op.Path }
+func (d Def) Tags() []string { return d.op.Tags }
 
 // Defs builds tool definitions for every operation in the document. When
 // readOnly is set, only safe (GET, HEAD) operations are exposed; filter, if

@@ -47,6 +47,9 @@ Options:
   -H, --header "Name: val"   header sent on every upstream request (repeatable)
   --http <addr>              serve over HTTP at addr (e.g. :8080) instead of stdio
   --read-only                only expose GET and HEAD operations
+  --include <pattern>        keep operations whose tool name, operationId, or path
+                             match (substring, or a glob when it has *; repeatable)
+  --tag <tag>                keep operations carrying this OpenAPI tag (repeatable)
   --stdio                    force stdio serving even in a terminal (skip the menu)
   --timeout <dur>            upstream request timeout (default 30s)
 
@@ -58,5 +61,6 @@ Examples:
   mcpify ls ./petstore.yaml
   mcpify --base https://api.example.com -H "Authorization: Bearer $TOKEN" spec.json
   mcpify --http :8080 https://api.example.com/openapi.json
+  mcpify ls --tag pet --include "*Order*" ./petstore.yaml
 `)
 }
