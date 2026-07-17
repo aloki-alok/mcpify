@@ -45,6 +45,9 @@ A <spec> is a path to an OpenAPI 3.x file or an http(s):// URL.
 Options:
   --base <url>               upstream base URL (overrides the spec's servers)
   -H, --header "Name: val"   header sent on every upstream request (repeatable)
+  --header-env "Name=VAR"    like -H, but the value is read from environment
+                             variable VAR, so secrets stay off the command line
+                             and out of printed client configs (repeatable)
   --http <addr>              serve over HTTP at addr (e.g. :8080) instead of stdio
   --read-only                only expose GET and HEAD operations
   --include <pattern>        keep operations whose tool name, operationId, or path
@@ -59,7 +62,7 @@ stdio gets the server directly.
 
 Examples:
   mcpify ls ./petstore.yaml
-  mcpify --base https://api.example.com -H "Authorization: Bearer $TOKEN" spec.json
+  mcpify --base https://api.example.com --header-env "Authorization=API_TOKEN" spec.json
   mcpify --http :8080 https://api.example.com/openapi.json
   mcpify ls --tag pet --include "*Order*" ./petstore.yaml
 `)

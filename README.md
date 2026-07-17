@@ -78,6 +78,16 @@ Forward auth and override the upstream base URL:
 mcpify --base https://api.example.com -H "Authorization: Bearer $TOKEN" spec.json
 ```
 
+With `-H`, the resolved secret still ends up on the command line, where process
+listings, shell history, and printed client configs can see it. `--header-env`
+keeps it out of all three: mcpify reads the value from the named environment
+variable at startup, and configs carry the reference instead of the secret:
+
+```
+export API_TOKEN="Bearer ..."
+mcpify --header-env "Authorization=API_TOKEN" spec.json
+```
+
 Expose only read operations (GET and HEAD):
 
 ```
@@ -134,6 +144,7 @@ request.
 | --- | --- |
 | `--base <url>` | upstream base URL, overriding the spec's `servers` |
 | `-H, --header "Name: value"` | header sent on every upstream request (repeatable) |
+| `--header-env "Name=VAR"` | like `-H`, value read from environment variable `VAR` (repeatable) |
 | `--http <addr>` | serve over HTTP at `addr` (MCP endpoint at `/mcp`) |
 | `--stdio` | serve stdio even in a terminal, skipping the menu |
 | `--read-only` | expose only GET and HEAD operations |
