@@ -123,3 +123,52 @@ func TestParseErrors(t *testing.T) {
 		t.Fatal("two specs should error")
 	}
 }
+
+func TestParseHeaderEnv(t *testing.T) {
+	t.Setenv("MCPIFY_TEST_TOKEN", "Bearer abc")
+	o, err := parse([]string{"--header-env", "Authorization=MCPIFY_TEST_TOKEN", "spec.yaml"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o.headers["Authorization"] != "Bearer abc" {
+		t.Fatalf("headers = %v", o.headers)
+	}
+	if o.headerEnv["Authorization"] != "MCPIFY_TEST_TOKEN" {
+		t.Fatalf("headerEnv = %v", o.headerEnv)
+	}
+}
+
+func TestParseHeaderEnvUnset(t *testing.T) {
+	_, err := parse([]string{"--header-env", "Authorization=MCPIFY_UNSET_VAR", "spec.yaml"})
+	if err == nil || !strings.Contains(err.Error(), "MCPIFY_UNSET_VAR") {
+		t.Fatalf("want error naming the variable, got %v", err)
+	}
+}
+
+func TestParseHeaderEnvBadForm(t *testing.T) {
+	for _, bad := range []string{"NoEquals", "=VAR", "Name="} {
+		if _, err := parse([]string{"--header-env", bad, "spec.yaml"}); err == nil {
+			t.Errorf("--header-env %q should error", bad)
+		}
+	}
+}
+
+func TestParseHeaderEnvPrecedence(t *testing.T) {
+	t.Setenv("MCPIFY_TEST_TOKEN", "from-env")
+	// later -H wins and clears the env-sourced marker
+	o, err := parse([]string{"--header-env", "Authorization=MCPIFY_TEST_TOKEN", "-H", "Authorization: literal", "spec.yaml"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o.headers["Authorization"] != "literal" || len(o.headerEnv) != 0 {
+		t.Fatalf("later -H should win: headers=%v headerEnv=%v", o.headers, o.headerEnv)
+	}
+	// later --header-env wins over an earlier -H
+	o, err = parse([]string{"-H", "Authorization: literal", "--header-env", "Authorization=MCPIFY_TEST_TOKEN", "spec.yaml"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o.headers["Authorization"] != "from-env" || o.headerEnv["Authorization"] != "MCPIFY_TEST_TOKEN" {
+		t.Fatalf("later --header-env should win: headers=%v headerEnv=%v", o.headers, o.headerEnv)
+	}
+}

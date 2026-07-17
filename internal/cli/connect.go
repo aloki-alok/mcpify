@@ -5,9 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
 	"net"
 	"os"
 	"os/signal"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -107,6 +109,12 @@ func printClientConfig(s ui.Style, name string, o options) {
   }
 }
 `, slug(name), strings.Join(quoted, ", "))
+	if len(o.headerEnv) > 0 {
+		vars := slices.Sorted(maps.Values(o.headerEnv))
+		fmt.Println()
+		fmt.Println(s.Dim(fmt.Sprintf("mcpify reads %s from the environment at startup; make sure the", strings.Join(vars, ", "))))
+		fmt.Println(s.Dim(`client provides it, e.g. via the server entry's "env" block.`))
+	}
 }
 
 // configArgs reconstructs the argument list a client should launch mcpify with,
@@ -116,8 +124,12 @@ func configArgs(o options) []string {
 	if o.base != "" {
 		args = append(args, "--base", o.base)
 	}
-	for k, v := range o.headers {
-		args = append(args, "-H", k+": "+v)
+	for _, k := range slices.Sorted(maps.Keys(o.headers)) {
+		if envVar, fromEnv := o.headerEnv[k]; fromEnv {
+			args = append(args, "--header-env", k+"="+envVar)
+		} else {
+			args = append(args, "-H", k+": "+o.headers[k])
+		}
 	}
 	if o.readOnly {
 		args = append(args, "--read-only")
