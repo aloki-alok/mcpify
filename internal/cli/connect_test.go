@@ -1,6 +1,9 @@
 package cli
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestEndpointURL(t *testing.T) {
 	cases := map[string]string{
@@ -78,4 +81,24 @@ func contains2(ss []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func TestConfigArgsHeaderEnv(t *testing.T) {
+	o := options{
+		spec:      "spec.yaml",
+		headers:   map[string]string{"Authorization": "Bearer secret", "X-Trace": "1"},
+		headerEnv: map[string]string{"Authorization": "AUTH_TOKEN"},
+	}
+	args := configArgs(o)
+	if !contains2(args, "--header-env") || !contains2(args, "Authorization=AUTH_TOKEN") {
+		t.Errorf("env-sourced header should be an env reference: %v", args)
+	}
+	if !contains2(args, "-H") || !contains2(args, "X-Trace: 1") {
+		t.Errorf("literal header should stay a -H: %v", args)
+	}
+	for _, a := range args {
+		if strings.Contains(a, "secret") {
+			t.Fatalf("secret leaked into config args: %v", args)
+		}
+	}
 }

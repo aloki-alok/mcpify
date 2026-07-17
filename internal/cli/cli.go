@@ -15,15 +15,19 @@ import (
 
 // options are the parsed flags shared by the serve and ls commands.
 type options struct {
-	base     string
-	headers  map[string]string
-	http     string
-	readOnly bool
-	include  []string
-	tags     []string
-	stdio    bool
-	timeout  time.Duration
-	spec     string
+	base    string
+	headers map[string]string
+	// headerEnv records which headers came from --header-env (header name ->
+	// environment variable name), so printed client configs can carry the
+	// reference instead of the resolved secret.
+	headerEnv map[string]string
+	http      string
+	readOnly  bool
+	include   []string
+	tags      []string
+	stdio     bool
+	timeout   time.Duration
+	spec      string
 }
 
 // Run dispatches a command and returns a process exit code.
@@ -105,7 +109,7 @@ func sample(items []string) string {
 // spec argument. It supports "--flag value", "--flag=value", and repeatable
 // -H / --header.
 func parse(args []string) (options, error) {
-	o := options{headers: map[string]string{}, timeout: 30 * time.Second}
+	o := options{headers: map[string]string{}, headerEnv: map[string]string{}, timeout: 30 * time.Second}
 	for i := 0; i < len(args); i++ {
 		a := args[i]
 		name, inlineVal, hasInline := splitFlag(a)
@@ -131,7 +135,17 @@ func parse(args []string) (options, error) {
 			if err != nil {
 				return o, err
 			}
-			if err := addHeader(o.headers, v); err != nil {
+			hname, err := addHeader(o.headers, v)
+			if err != nil {
+				return o, err
+			}
+			delete(o.headerEnv, hname)
+		case "--header-env":
+			v, err := next()
+			if err != nil {
+				return o, err
+			}
+			if err := addHeaderEnv(o.headers, o.headerEnv, v); err != nil {
 				return o, err
 			}
 		case "--http":
@@ -194,16 +208,37 @@ func splitFlag(a string) (name, val string, hasVal bool) {
 	return a, "", false
 }
 
-func addHeader(into map[string]string, raw string) error {
+func addHeader(into map[string]string, raw string) (string, error) {
 	idx := strings.IndexByte(raw, ':')
 	if idx < 0 {
-		return fmt.Errorf("header %q must be in \"Name: value\" form", raw)
+		return "", fmt.Errorf("header %q must be in \"Name: value\" form", raw)
 	}
 	name := strings.TrimSpace(raw[:idx])
 	value := strings.TrimSpace(raw[idx+1:])
 	if name == "" {
-		return fmt.Errorf("header %q has an empty name", raw)
+		return "", fmt.Errorf("header %q has an empty name", raw)
 	}
 	into[name] = value
+	return name, nil
+}
+
+// addHeaderEnv resolves a "Name=ENV_VAR" pair against the environment, so the
+// secret never appears on the command line or in a printed client config.
+func addHeaderEnv(headers, headerEnv map[string]string, raw string) error {
+	idx := strings.IndexByte(raw, '=')
+	if idx < 0 {
+		return fmt.Errorf("--header-env %q must be in \"Name=ENV_VAR\" form", raw)
+	}
+	name := strings.TrimSpace(raw[:idx])
+	envVar := strings.TrimSpace(raw[idx+1:])
+	if name == "" || envVar == "" {
+		return fmt.Errorf("--header-env %q must be in \"Name=ENV_VAR\" form", raw)
+	}
+	value := os.Getenv(envVar)
+	if value == "" {
+		return fmt.Errorf("--header-env %s: environment variable %s is not set", raw, envVar)
+	}
+	headers[name] = value
+	headerEnv[name] = envVar
 	return nil
 }
