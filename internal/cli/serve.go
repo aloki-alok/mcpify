@@ -64,7 +64,7 @@ func serve(version string, args []string) int {
 	// stdio: a client spawned us over a pipe, or --stdio forces it. Serve quietly;
 	// stdout is the MCP transport so all diagnostics go to stderr.
 	if o.stdio || !ui.IsTTY(os.Stdin) {
-		fmt.Fprintf(os.Stderr, "mcpify: %s — %d tools → %s (stdio)\n", name, len(defs), base)
+		fmt.Fprintf(os.Stderr, "mcpify: %s: %d tools → %s (stdio)\n", name, len(defs), base)
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 		if err := server.RunStdio(ctx, srv); err != nil && err != context.Canceled {
